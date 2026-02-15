@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "./supabaseClient";
+import DealForm from "./DealForm";
 
 // ─── CONSTANTS ──────────────────────────────────────────────
 const STAGES = [
@@ -144,9 +145,13 @@ export default function App() {
   };
 
   const saveDeal = async () => {
+    saveDealFromForm(formData);
+  };
+
+  const saveDealFromForm = async (data) => {
     setSaving(true);
     setError(null);
-    const dbDeal = localToDb({ ...formData, updated_at: new Date().toISOString() });
+    const dbDeal = localToDb({ ...data, updated_at: new Date().toISOString() });
     const isEdit = deals.some((d) => d.id === dbDeal.id);
 
     const { data, error: saveErr } = await supabase
@@ -523,79 +528,22 @@ export default function App() {
     );
   };
 
-  // ─── FORM FIELD HANDLER ──────────────────────────────────
-  const handleFieldChange = useCallback((field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  }, []);
-
   // ─── FORM MODAL ─────────────────────────────────────────
-  const FormModal = () => {
+  const renderFormModal = () => {
     if (!showForm) return null;
     const isEdit = deals.some((d) => d.id === formData.id);
-
-    const renderField = (lbl, field, type = "text", options = null, textarea = false, half = false) => (
-      <div key={field} style={{ gridColumn: half ? "span 1" : "span 2" }}>
-        <label style={labelStyle}>{lbl}</label>
-        {options ? (
-          <select style={{ ...inputStyle, cursor: "pointer" }} value={formData[field]} onChange={(e) => handleFieldChange(field, e.target.value)}>
-            {options.map((o) => <option key={o.value || o} value={o.value || o}>{o.label || o}</option>)}
-          </select>
-        ) : textarea ? (
-          <textarea style={{ ...inputStyle, minHeight: 80, resize: "vertical" }} value={formData[field]} onChange={(e) => handleFieldChange(field, e.target.value)} />
-        ) : (
-          <input style={inputStyle} type={type} value={formData[field]} onChange={(e) => handleFieldChange(field, e.target.value)} />
-        )}
-      </div>
-    );
-
     return (
-      <div
-        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
-        onClick={() => setShowForm(false)}
-      >
-        <div
-          style={{ background: "#0f1322", border: "1px solid #1e293b", borderRadius: 16, padding: 28, width: "100%", maxWidth: 620, maxHeight: "90vh", overflowY: "auto" }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <h3 style={{ margin: "0 0 20px", fontSize: 20, fontWeight: 800 }}>{isEdit ? "Edit Deal" : "New Deal"}</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            {renderField("Company Name", "company", "text", null, false, true)}
-            {renderField("Location", "location", "text", null, false, true)}
-            {renderField("Sector", "sector", "text", SECTORS, false, true)}
-            {renderField("Source", "source", "text", SOURCES, false, true)}
-            {renderField("Stage", "stage", "text", STAGES.map((s) => ({ value: s.id, label: s.label })), false, true)}
-            <div style={{ gridColumn: "span 1" }}>
-              <label style={labelStyle}>Rating</label>
-              <Stars value={formData.rating} onChange={(v) => handleFieldChange("rating", v)} />
-            </div>
-            {renderField("Revenue ($)", "revenue", "number", null, false, true)}
-            {renderField("EBITDA ($)", "ebitda", "number", null, false, true)}
-            {renderField("Asking Price ($)", "asking_price", "number", null, false, true)}
-            <div />
-            <div style={{ gridColumn: "span 2", borderTop: "1px solid #1e293b", margin: "4px 0" }} />
-            {renderField("Contact Name", "contact_name", "text", null, false, true)}
-            {renderField("Contact Email", "contact_email", "email", null, false, true)}
-            {renderField("Contact Phone", "contact_phone", "tel", null, false, true)}
-            {renderField("Broker", "broker", "text", null, false, true)}
-            <div style={{ gridColumn: "span 2", borderTop: "1px solid #1e293b", margin: "4px 0" }} />
-            {renderField("Next Step", "next_step")}
-            {renderField("Next Step Date", "next_step_date", "date", null, false, true)}
-            <div />
-            {renderField("Notes", "notes", "text", null, true)}
-          </div>
-          <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
-            <button style={btn("#334155", true)} onClick={() => setShowForm(false)}>Cancel</button>
-            {isEdit && (
-              <button style={btn("#dc2626", true)} onClick={() => { if (window.confirm("Delete this deal?")) deleteDeal(formData.id); }}>
-                Delete
-              </button>
-            )}
-            <button style={btn("#6366f1")} onClick={saveDeal} disabled={saving}>
-              {saving ? "Saving..." : isEdit ? "Save Changes" : "Add Deal"}
-            </button>
-          </div>
-        </div>
-      </div>
+      <DealForm
+        initialData={formData}
+        isEdit={isEdit}
+        saving={saving}
+        onSave={(data) => {
+          setFormData(data);
+          saveDealFromForm(data);
+        }}
+        onDelete={deleteDeal}
+        onClose={() => setShowForm(false)}
+      />
     );
   };
 
@@ -672,7 +620,7 @@ export default function App() {
       {view === "pipeline" && <PipelineView />}
       {view === "list" && <ListView />}
       {view === "detail" && <DetailView />}
-      <FormModal />
+      {renderFormModal()}
 
       {deals.length === 0 && view !== "detail" && (
         <div style={{ textAlign: "center", padding: "80px 20px", color: "#475569" }}>
