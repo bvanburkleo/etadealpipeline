@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "./supabaseClient";
 import DealForm from "./DealForm";
+import Dashboard from "./Dashboard";
+import DealScreener from "./DealScreener";
+import ActivityLog from "./ActivityLog";
+import Contacts from "./Contacts";
 
 // ─── CONSTANTS ──────────────────────────────────────────────
 const STAGES = [
@@ -635,6 +639,10 @@ export default function App() {
             {[
               { id: "pipeline", label: "Pipeline" },
               { id: "list", label: "List" },
+              { id: "dashboard", label: "Dashboard" },
+              { id: "screener", label: "Screener" },
+              { id: "activities", label: "Activities" },
+              { id: "contacts", label: "Contacts" },
             ].map((v) => (
               <button
                 key={v.id}
@@ -679,6 +687,10 @@ export default function App() {
       {view === "pipeline" && <PipelineView />}
       {view === "list" && <ListView />}
       {view === "detail" && <DetailView />}
+      {view === "dashboard" && <Dashboard deals={deals} />}
+      {view === "screener" && <DealScreener />}
+      {view === "activities" && <ActivityLog deals={deals} />}
+      {view === "contacts" && <Contacts deals={deals} />}
       {renderFormModal()}
 
       {deals.length === 0 && view !== "detail" && (
