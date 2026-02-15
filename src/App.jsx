@@ -148,10 +148,10 @@ export default function App() {
     saveDealFromForm(formData);
   };
 
-  const saveDealFromForm = async (data) => {
+  const saveDealFromForm = async (formInput) => {
     setSaving(true);
     setError(null);
-    const dbDeal = localToDb({ ...data, updated_at: new Date().toISOString() });
+    const dbDeal = localToDb({ ...formInput, updated_at: new Date().toISOString() });
     const isEdit = deals.some((d) => d.id === dbDeal.id);
 
     const { data, error: saveErr } = await supabase
