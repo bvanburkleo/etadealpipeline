@@ -547,7 +547,65 @@ export default function App() {
     );
   };
 
-  // ─── LOADING STATE ──────────────────────────────────────
+  // ─── EXPORT TO CSV/EXCEL ─────────────────────────────────
+  const exportToExcel = () => {
+    if (deals.length === 0) return;
+
+    const headers = [
+      "Company", "Sector", "Location", "Stage", "Source", "Rating",
+      "Revenue", "EBITDA", "EBITDA Margin %", "Asking Price", "Multiple",
+      "Contact Name", "Contact Email", "Contact Phone", "Broker",
+      "Next Step", "Next Step Date", "Notes", "Created", "Updated"
+    ];
+
+    const stageLabel = (id) => {
+      const s = STAGES.find((st) => st.id === id);
+      return s ? s.label : id;
+    };
+
+    const escCsv = (val) => {
+      const str = String(val || "");
+      if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    };
+
+    const rows = deals.map((d) => [
+      d.company,
+      d.sector,
+      d.location,
+      stageLabel(d.stage),
+      d.source,
+      d.rating,
+      d.revenue || "",
+      d.ebitda || "",
+      d.ebitda_margin || "",
+      d.asking_price || "",
+      d.multiple || "",
+      d.contact_name,
+      d.contact_email,
+      d.contact_phone,
+      d.broker,
+      d.next_step,
+      d.next_step_date || "",
+      d.notes,
+      d.created_at ? new Date(d.created_at).toLocaleDateString() : "",
+      d.updated_at ? new Date(d.updated_at).toLocaleDateString() : "",
+    ].map(escCsv));
+
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const bom = "\uFEFF";
+    const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ETA_Deal_Pipeline_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
   if (loading) {
     return (
       <div style={{ ...root, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
@@ -592,6 +650,7 @@ export default function App() {
               </button>
             ))}
           </div>
+          <button style={btn("#334155", true)} onClick={exportToExcel} disabled={deals.length === 0}>⬇ Export</button>
           <button style={btn("#6366f1")} onClick={openNew}>+ New Deal</button>
         </div>
       </div>
