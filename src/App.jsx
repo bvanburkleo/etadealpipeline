@@ -523,22 +523,27 @@ export default function App() {
     );
   };
 
+  // ─── FORM FIELD HANDLER ──────────────────────────────────
+  const handleFieldChange = useCallback((field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
   // ─── FORM MODAL ─────────────────────────────────────────
   const FormModal = () => {
     if (!showForm) return null;
     const isEdit = deals.some((d) => d.id === formData.id);
 
-    const Field = ({ label: lbl, field, type = "text", options, textarea, half }) => (
-      <div style={{ gridColumn: half ? "span 1" : "span 2" }}>
+    const renderField = (lbl, field, type = "text", options = null, textarea = false, half = false) => (
+      <div key={field} style={{ gridColumn: half ? "span 1" : "span 2" }}>
         <label style={labelStyle}>{lbl}</label>
         {options ? (
-          <select style={{ ...inputStyle, cursor: "pointer" }} value={formData[field]} onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}>
+          <select style={{ ...inputStyle, cursor: "pointer" }} value={formData[field]} onChange={(e) => handleFieldChange(field, e.target.value)}>
             {options.map((o) => <option key={o.value || o} value={o.value || o}>{o.label || o}</option>)}
           </select>
         ) : textarea ? (
-          <textarea style={{ ...inputStyle, minHeight: 80, resize: "vertical" }} value={formData[field]} onChange={(e) => setFormData({ ...formData, [field]: e.target.value })} />
+          <textarea style={{ ...inputStyle, minHeight: 80, resize: "vertical" }} value={formData[field]} onChange={(e) => handleFieldChange(field, e.target.value)} />
         ) : (
-          <input style={inputStyle} type={type} value={formData[field]} onChange={(e) => setFormData({ ...formData, [field]: e.target.value })} />
+          <input style={inputStyle} type={type} value={formData[field]} onChange={(e) => handleFieldChange(field, e.target.value)} />
         )}
       </div>
     );
@@ -554,29 +559,29 @@ export default function App() {
         >
           <h3 style={{ margin: "0 0 20px", fontSize: 20, fontWeight: 800 }}>{isEdit ? "Edit Deal" : "New Deal"}</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            <Field label="Company Name" field="company" half />
-            <Field label="Location" field="location" half />
-            <Field label="Sector" field="sector" options={SECTORS} half />
-            <Field label="Source" field="source" options={SOURCES} half />
-            <Field label="Stage" field="stage" options={STAGES.map((s) => ({ value: s.id, label: s.label }))} half />
+            {renderField("Company Name", "company", "text", null, false, true)}
+            {renderField("Location", "location", "text", null, false, true)}
+            {renderField("Sector", "sector", "text", SECTORS, false, true)}
+            {renderField("Source", "source", "text", SOURCES, false, true)}
+            {renderField("Stage", "stage", "text", STAGES.map((s) => ({ value: s.id, label: s.label })), false, true)}
             <div style={{ gridColumn: "span 1" }}>
               <label style={labelStyle}>Rating</label>
-              <Stars value={formData.rating} onChange={(v) => setFormData({ ...formData, rating: v })} />
+              <Stars value={formData.rating} onChange={(v) => handleFieldChange("rating", v)} />
             </div>
-            <Field label="Revenue ($)" field="revenue" type="number" half />
-            <Field label="EBITDA ($)" field="ebitda" type="number" half />
-            <Field label="Asking Price ($)" field="asking_price" type="number" half />
+            {renderField("Revenue ($)", "revenue", "number", null, false, true)}
+            {renderField("EBITDA ($)", "ebitda", "number", null, false, true)}
+            {renderField("Asking Price ($)", "asking_price", "number", null, false, true)}
             <div />
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #1e293b", margin: "4px 0" }} />
-            <Field label="Contact Name" field="contact_name" half />
-            <Field label="Contact Email" field="contact_email" type="email" half />
-            <Field label="Contact Phone" field="contact_phone" type="tel" half />
-            <Field label="Broker" field="broker" half />
+            {renderField("Contact Name", "contact_name", "text", null, false, true)}
+            {renderField("Contact Email", "contact_email", "email", null, false, true)}
+            {renderField("Contact Phone", "contact_phone", "tel", null, false, true)}
+            {renderField("Broker", "broker", "text", null, false, true)}
             <div style={{ gridColumn: "span 2", borderTop: "1px solid #1e293b", margin: "4px 0" }} />
-            <Field label="Next Step" field="next_step" />
-            <Field label="Next Step Date" field="next_step_date" type="date" half />
+            {renderField("Next Step", "next_step")}
+            {renderField("Next Step Date", "next_step_date", "date", null, false, true)}
             <div />
-            <Field label="Notes" field="notes" textarea />
+            {renderField("Notes", "notes", "text", null, true)}
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
             <button style={btn("#334155", true)} onClick={() => setShowForm(false)}>Cancel</button>
