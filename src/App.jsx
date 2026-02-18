@@ -5,6 +5,7 @@ import Dashboard from "./Dashboard";
 import DealScreener from "./DealScreener";
 import ActivityLog from "./ActivityLog";
 import Contacts from "./Contacts";
+import Scorecard from "./Scorecard";
 
 // ─── CONSTANTS ──────────────────────────────────────────────
 const STAGES = [
@@ -642,6 +643,7 @@ export default function App() {
               { id: "dashboard", label: "Dashboard" },
               { id: "screener", label: "Screener" },
               { id: "activities", label: "Activities" },
+              { id: "scorecard", label: "Scorecard" },
               { id: "contacts", label: "Contacts" },
             ].map((v) => (
               <button
@@ -690,6 +692,7 @@ export default function App() {
       {view === "dashboard" && <Dashboard deals={deals} />}
       {view === "screener" && <DealScreener />}
       {view === "activities" && <ActivityLog deals={deals} />}
+      {view === "scorecard" && <Scorecard deals={deals} />}
       {view === "contacts" && <Contacts deals={deals} />}
       {renderFormModal()}
 
