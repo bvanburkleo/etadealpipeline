@@ -54,7 +54,8 @@ const EMPTY_DEAL = {
   company: "",
   sector: "B2B Services",
   location: "",
-  source: "Broker",
+    listing_url: "",
+    source: "Broker",
   stage: "identified",
   revenue: "",
   ebitda: "",
@@ -569,7 +570,7 @@ export default function App() {
       "Company", "Sector", "Location", "Stage", "Source", "Rating",
       "Revenue", "EBITDA", "EBITDA Margin %", "Asking Price", "Multiple",
       "Broker Name", "Broker Email", "Broker Phone", "Firm",
-      "Next Step", "Next Step Date", "Notes", "Created", "Updated",
+      "Next Step", "Next Step Date", "Listing URL", "Notes", "Created", "Updated",
     ];
     const stageLabel = (id) => {
       const s = STAGES.find((st) => st.id === id);
@@ -587,7 +588,7 @@ export default function App() {
         d.company, d.sector, d.location, stageLabel(d.stage), d.source, d.rating,
         d.revenue || "", d.ebitda || "", d.ebitda_margin || "", d.asking_price || "", d.multiple || "",
         d.contact_name, d.contact_email, d.contact_phone, d.broker,
-        d.next_step, d.next_step_date || "", d.notes,
+        d.next_step, d.next_step_date || "", d.listing_url || "", d.notes,
         d.created_at ? new Date(d.created_at).toLocaleDateString() : "",
         d.updated_at ? new Date(d.updated_at).toLocaleDateString() : "",
       ].map(escCsv)
