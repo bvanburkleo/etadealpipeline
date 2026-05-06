@@ -11,14 +11,16 @@ import Scorecard from "./Scorecard";
 
 // CHANGE 2: Added nda_signed after identified, renamed initial_review → cim_received
 const STAGES = [
-  { id: "identified",   label: "Identified",       color: "#64748b" },
-  { id: "nda_signed",   label: "NDA Signed",        color: "#06b6d4" },
-  { id: "cim_received", label: "CIM Received",      color: "#6366f1" },
-  { id: "outreach",     label: "Outreach",          color: "#0ea5e9" },
-  { id: "diligence",    label: "Due Diligence",     color: "#f59e0b" },
-  { id: "loi",          label: "LOI / Negotiation", color: "#e879f9" },
-  { id: "closed",       label: "Closed",            color: "#22c55e" },
-  { id: "passed",       label: "Passed",            color: "#ef4444" },
+  { id: "sourced",      label: "Sourced",          color: "#64748b" },
+  { id: "screened",     label: "Screened",         color: "#06b6d4" },
+  { id: "nda",          label: "NDA",              color: "#6366f1" },
+  { id: "cim_reviewed", label: "CIM Reviewed",     color: "#0ea5e9" },
+  { id: "mgmt_call",    label: "Management Call",  color: "#8b5cf6" },
+  { id: "ioi",          label: "IOI",              color: "#f59e0b" },
+  { id: "loi",          label: "LOI",              color: "#e879f9" },
+  { id: "diligence",    label: "Due Diligence",    color: "#fb923c" },
+  { id: "closed",       label: "Closed",           color: "#22c55e" },
+  { id: "passed",       label: "Passed",           color: "#ef4444" },
 ];
 
 const SECTORS = [
@@ -56,7 +58,7 @@ const EMPTY_DEAL = {
   location: "",
     listing_url: "",
     source: "Broker",
-  stage: "identified",
+  stage: "sourced",
   revenue: "",
   ebitda: "",
   asking_price: "",

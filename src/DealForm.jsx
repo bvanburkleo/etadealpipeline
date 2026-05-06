@@ -38,12 +38,14 @@ const btn = (bg = "#6366f1", small = false) => ({
 });
 
 const STAGES = [
-  { id: "identified",   label: "Identified" },
-  { id: "nda_signed",   label: "NDA Signed" },
-  { id: "cim_received", label: "CIM Received" },
-  { id: "outreach",     label: "Outreach" },
+  { id: "sourced",      label: "Sourced" },
+  { id: "screened",     label: "Screened" },
+  { id: "nda",          label: "NDA" },
+  { id: "cim_reviewed", label: "CIM Reviewed" },
+  { id: "mgmt_call",    label: "Management Call" },
+  { id: "ioi",          label: "IOI" },
+  { id: "loi",          label: "LOI" },
   { id: "diligence",    label: "Due Diligence" },
-  { id: "loi",          label: "LOI / Negotiation" },
   { id: "closed",       label: "Closed" },
   { id: "passed",       label: "Passed" },
 ];
