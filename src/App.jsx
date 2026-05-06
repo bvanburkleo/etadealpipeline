@@ -7,15 +7,18 @@ import ActivityLog from "./ActivityLog";
 import Contacts from "./Contacts";
 import Scorecard from "./Scorecard";
 
-// ─── CONSTANTS ──────────────────────────────────────────────
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+
+// CHANGE 2: Added nda_signed after identified, renamed initial_review → cim_received
 const STAGES = [
-  { id: "identified", label: "Identified", color: "#64748b" },
-  { id: "initial_review", label: "Initial Review", color: "#6366f1" },
-  { id: "outreach", label: "Outreach", color: "#0ea5e9" },
-  { id: "diligence", label: "Due Diligence", color: "#f59e0b" },
-  { id: "loi", label: "LOI / Negotiation", color: "#e879f9" },
-  { id: "closed", label: "Closed", color: "#22c55e" },
-  { id: "passed", label: "Passed", color: "#ef4444" },
+  { id: "identified",   label: "Identified",       color: "#64748b" },
+  { id: "nda_signed",   label: "NDA Signed",        color: "#06b6d4" },
+  { id: "cim_received", label: "CIM Received",      color: "#6366f1" },
+  { id: "outreach",     label: "Outreach",          color: "#0ea5e9" },
+  { id: "diligence",    label: "Due Diligence",     color: "#f59e0b" },
+  { id: "loi",          label: "LOI / Negotiation", color: "#e879f9" },
+  { id: "closed",       label: "Closed",            color: "#22c55e" },
+  { id: "passed",       label: "Passed",            color: "#ef4444" },
 ];
 
 const SECTORS = [
@@ -33,10 +36,14 @@ const SECTORS = [
   "Other",
 ];
 
+// CHANGE 1: Added BizEx, Vested Business Brokers, Axial
 const SOURCES = [
   "Broker",
   "Direct Outreach",
   "BizBuySell",
+  "BizEx",
+  "Vested Business Brokers",
+  "Axial",
   "Referral",
   "SearchFunder",
   "Other",
@@ -66,7 +73,10 @@ const EMPTY_DEAL = {
   updated_at: "",
 };
 
-const uid = () => crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+const uid = () =>
+  crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 
 const fmt = (v) => {
   if (!v && v !== 0) return "—";
@@ -77,7 +87,8 @@ const fmt = (v) => {
   return `$${n.toLocaleString()}`;
 };
 
-// ─── DATABASE HELPERS ───────────────────────────────────────
+// ─── DATABASE HELPERS ─────────────────────────────────────────────────────────
+
 const dbToLocal = (row) => ({
   ...row,
   revenue: row.revenue || "",
@@ -88,23 +99,21 @@ const dbToLocal = (row) => ({
 
 const localToDb = (deal) => {
   const d = { ...deal };
-  // Compute derived fields
   if (d.revenue && d.ebitda && parseFloat(d.revenue) > 0) {
     d.ebitda_margin = (parseFloat(d.ebitda) / parseFloat(d.revenue) * 100).toFixed(1);
   }
   if (d.asking_price && d.ebitda && parseFloat(d.ebitda) > 0) {
     d.multiple = (parseFloat(d.asking_price) / parseFloat(d.ebitda)).toFixed(1) + "x";
   }
-  // Clean numeric fields
   d.revenue = parseFloat(d.revenue) || 0;
   d.ebitda = parseFloat(d.ebitda) || 0;
   d.asking_price = parseFloat(d.asking_price) || 0;
-  // Clean date
   if (!d.next_step_date) d.next_step_date = null;
   return d;
 };
 
-// ─── MAIN APP ───────────────────────────────────────────────
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+
 export default function App() {
   const [deals, setDeals] = useState([]);
   const [view, setView] = useState("pipeline");
@@ -117,7 +126,7 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  // ─── LOAD DEALS ─────────────────────────────────────────
+  // ─── LOAD DEALS ───────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchDeals = async () => {
       setLoading(true);
@@ -125,7 +134,6 @@ export default function App() {
         .from("deals")
         .select("*")
         .order("created_at", { ascending: false });
-
       if (fetchErr) {
         setError("Failed to load deals: " + fetchErr.message);
         console.error(fetchErr);
@@ -137,7 +145,7 @@ export default function App() {
     fetchDeals();
   }, []);
 
-  // ─── CRUD OPERATIONS ───────────────────────────────────
+  // ─── CRUD ─────────────────────────────────────────────────────────────────
   const openNew = () => {
     const now = new Date().toISOString();
     setFormData({ ...EMPTY_DEAL, id: uid(), created_at: now, updated_at: now });
@@ -149,22 +157,16 @@ export default function App() {
     setShowForm(true);
   };
 
-  const saveDeal = async () => {
-    saveDealFromForm(formData);
-  };
-
   const saveDealFromForm = async (formInput) => {
     setSaving(true);
     setError(null);
     const dbDeal = localToDb({ ...formInput, updated_at: new Date().toISOString() });
     const isEdit = deals.some((d) => d.id === dbDeal.id);
-
     const { data, error: saveErr } = await supabase
       .from("deals")
       .upsert(dbDeal, { onConflict: "id" })
       .select()
       .single();
-
     if (saveErr) {
       setError("Failed to save: " + saveErr.message);
       console.error(saveErr);
@@ -200,7 +202,7 @@ export default function App() {
     setShowForm(false);
   };
 
-  // ─── FILTERS ────────────────────────────────────────────
+  // ─── FILTERS ──────────────────────────────────────────────────────────────
   const filteredDeals = deals.filter((d) => {
     if (filterStage !== "all" && d.stage !== filterStage) return false;
     if (searchQuery) {
@@ -221,7 +223,7 @@ export default function App() {
   const totalPipelineValue = activeDeals.reduce((s, d) => s + (parseFloat(d.ebitda) || 0), 0);
   const stageMeta = (id) => STAGES.find((s) => s.id === id) || STAGES[0];
 
-  // ─── SMALL COMPONENTS ──────────────────────────────────
+  // ─── SMALL COMPONENTS ─────────────────────────────────────────────────────
   const Stars = ({ value, onChange }) => (
     <div style={{ display: "flex", gap: 2 }}>
       {[1, 2, 3, 4, 5].map((n) => (
@@ -264,7 +266,7 @@ export default function App() {
       </div>
     ) : null;
 
-  // ─── STYLES ─────────────────────────────────────────────
+  // ─── STYLES ───────────────────────────────────────────────────────────────
   const root = {
     fontFamily: "'DM Sans', 'Segoe UI', system-ui, sans-serif",
     background: "#0c0f1a",
@@ -341,7 +343,7 @@ export default function App() {
     textTransform: "uppercase",
   });
 
-  // ─── PIPELINE VIEW ─────────────────────────────────────
+  // ─── PIPELINE VIEW ────────────────────────────────────────────────────────
   const PipelineView = () => (
     <div style={{ padding: "20px 24px", overflowX: "auto" }}>
       <div style={{ display: "flex", gap: 14, minWidth: STAGES.filter((s) => s.id !== "passed").length * 220 }}>
@@ -354,12 +356,7 @@ export default function App() {
                 <span style={{ fontWeight: 700, fontSize: 13, letterSpacing: 0.5, textTransform: "uppercase", color: "#94a3b8" }}>
                   {stage.label}
                 </span>
-                <span
-                  style={{
-                    background: "#1e293b", color: "#64748b", fontSize: 11, fontWeight: 700,
-                    padding: "2px 8px", borderRadius: 10, marginLeft: "auto",
-                  }}
-                >
+                <span style={{ background: "#1e293b", color: "#64748b", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 10, marginLeft: "auto" }}>
                   {stageDeals.length}
                 </span>
               </div>
@@ -369,8 +366,15 @@ export default function App() {
                     key={deal.id}
                     style={{ ...cardStyle, borderLeft: `3px solid ${stage.color}` }}
                     onClick={() => { setSelectedDeal(deal); setView("detail"); }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = stage.color; e.currentTarget.style.transform = "translateY(-2px)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#1e293b"; e.currentTarget.style.borderLeftColor = stage.color; e.currentTarget.style.transform = "none"; }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = stage.color;
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "#1e293b";
+                      e.currentTarget.style.borderLeftColor = stage.color;
+                      e.currentTarget.style.transform = "none";
+                    }}
                   >
                     <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{deal.company || "Untitled"}</div>
                     <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>{deal.sector} · {deal.location || "—"}</div>
@@ -397,7 +401,7 @@ export default function App() {
     </div>
   );
 
-  // ─── LIST VIEW ──────────────────────────────────────────
+  // ─── LIST VIEW ────────────────────────────────────────────────────────────
   const ListView = () => (
     <div style={{ padding: "20px 24px" }}>
       <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
@@ -407,7 +411,11 @@ export default function App() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <select style={{ ...inputStyle, maxWidth: 180, cursor: "pointer" }} value={filterStage} onChange={(e) => setFilterStage(e.target.value)}>
+        <select
+          style={{ ...inputStyle, maxWidth: 180, cursor: "pointer" }}
+          value={filterStage}
+          onChange={(e) => setFilterStage(e.target.value)}
+        >
           <option value="all">All Stages</option>
           {STAGES.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
         </select>
@@ -445,7 +453,9 @@ export default function App() {
               );
             })}
             {filteredDeals.length === 0 && (
-              <tr><td colSpan={9} style={{ padding: 40, textAlign: "center", color: "#475569" }}>No deals found</td></tr>
+              <tr>
+                <td colSpan={9} style={{ padding: 40, textAlign: "center", color: "#475569" }}>No deals found</td>
+              </tr>
             )}
           </tbody>
         </table>
@@ -453,14 +463,17 @@ export default function App() {
     </div>
   );
 
-  // ─── DETAIL VIEW ────────────────────────────────────────
+  // ─── DETAIL VIEW ──────────────────────────────────────────────────────────
   const DetailView = () => {
     if (!selectedDeal) return null;
     const deal = selectedDeal;
     const sm = stageMeta(deal.stage);
     return (
       <div style={{ padding: "24px 28px", maxWidth: 820, margin: "0 auto" }}>
-        <button style={{ ...btn("transparent", true), color: "#6366f1", padding: 0, marginBottom: 16, fontSize: 13 }} onClick={() => setView("pipeline")}>
+        <button
+          style={{ ...btn("transparent", true), color: "#6366f1", padding: 0, marginBottom: 16, fontSize: 13 }}
+          onClick={() => setView("pipeline")}
+        >
           ← Back to Pipeline
         </button>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
@@ -472,7 +485,6 @@ export default function App() {
             <button style={btn("#dc2626", true)} onClick={() => { if (window.confirm("Delete this deal?")) deleteDeal(deal.id); }}>Delete</button>
           </div>
         </div>
-
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
           <div style={{ background: "#141829", border: "1px solid #1e293b", borderRadius: 12, padding: 20 }}>
             <div style={{ ...labelStyle, marginBottom: 14, fontSize: 13 }}>Financials</div>
@@ -491,41 +503,39 @@ export default function App() {
               ))}
             </div>
           </div>
-
           <div style={{ background: "#141829", border: "1px solid #1e293b", borderRadius: 12, padding: 20 }}>
             <div style={{ ...labelStyle, marginBottom: 14, fontSize: 13 }}>Details</div>
-            {[["Sector", deal.sector], ["Location", deal.location || "—"], ["Source", deal.source], ["Broker", deal.broker || "—"]].map(([k, v]) => (
+            {[["Sector", deal.sector], ["Location", deal.location || "—"], ["Source", deal.source], ["Firm", deal.broker || "—"]].map(([k, v]) => (
               <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #111827" }}>
                 <span style={{ color: "#64748b", fontSize: 13 }}>{k}</span>
                 <span style={{ fontWeight: 600, fontSize: 13 }}>{v}</span>
               </div>
             ))}
           </div>
-
           <div style={{ background: "#141829", border: "1px solid #1e293b", borderRadius: 12, padding: 20 }}>
-            <div style={{ ...labelStyle, marginBottom: 14, fontSize: 13 }}>Contact</div>
-            {[["Name", deal.contact_name || "—"], ["Email", deal.contact_email || "—"], ["Phone", deal.contact_phone || "—"]].map(([k, v]) => (
+            {/* CHANGE 3: Labels updated in detail view to match form labels */}
+            <div style={{ ...labelStyle, marginBottom: 14, fontSize: 13 }}>Broker Contact</div>
+            {[["Broker Name", deal.contact_name || "—"], ["Broker Email", deal.contact_email || "—"], ["Broker Phone", deal.contact_phone || "—"]].map(([k, v]) => (
               <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #111827" }}>
                 <span style={{ color: "#64748b", fontSize: 13 }}>{k}</span>
                 <span style={{ fontWeight: 600, fontSize: 13 }}>{v}</span>
               </div>
             ))}
           </div>
-
           <div style={{ background: "#141829", border: "1px solid #1e293b", borderRadius: 12, padding: 20 }}>
             <div style={{ ...labelStyle, marginBottom: 14, fontSize: 13 }}>Next Step</div>
             <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>{deal.next_step || "None set"}</div>
-            {deal.next_step_date && <div style={{ fontSize: 13, color: "#f59e0b" }}>Due: {new Date(deal.next_step_date).toLocaleDateString()}</div>}
+            {deal.next_step_date && (
+              <div style={{ fontSize: 13, color: "#f59e0b" }}>Due: {new Date(deal.next_step_date).toLocaleDateString()}</div>
+            )}
           </div>
         </div>
-
         {deal.notes && (
           <div style={{ background: "#141829", border: "1px solid #1e293b", borderRadius: 12, padding: 20, marginTop: 20 }}>
             <div style={{ ...labelStyle, marginBottom: 10, fontSize: 13 }}>Notes</div>
             <div style={{ fontSize: 14, lineHeight: 1.7, color: "#cbd5e1", whiteSpace: "pre-wrap" }}>{deal.notes}</div>
           </div>
         )}
-
         <div style={{ fontSize: 11, color: "#334155", marginTop: 16 }}>
           Created {new Date(deal.created_at).toLocaleDateString()} · Updated {new Date(deal.updated_at).toLocaleDateString()}
         </div>
@@ -533,7 +543,7 @@ export default function App() {
     );
   };
 
-  // ─── FORM MODAL ─────────────────────────────────────────
+  // ─── FORM MODAL ───────────────────────────────────────────────────────────
   const renderFormModal = () => {
     if (!showForm) return null;
     const isEdit = deals.some((d) => d.id === formData.id);
@@ -552,22 +562,19 @@ export default function App() {
     );
   };
 
-  // ─── EXPORT TO CSV/EXCEL ─────────────────────────────────
+  // ─── EXPORT TO CSV ────────────────────────────────────────────────────────
   const exportToExcel = () => {
     if (deals.length === 0) return;
-
     const headers = [
       "Company", "Sector", "Location", "Stage", "Source", "Rating",
       "Revenue", "EBITDA", "EBITDA Margin %", "Asking Price", "Multiple",
-      "Contact Name", "Contact Email", "Contact Phone", "Broker",
-      "Next Step", "Next Step Date", "Notes", "Created", "Updated"
+      "Broker Name", "Broker Email", "Broker Phone", "Firm",
+      "Next Step", "Next Step Date", "Notes", "Created", "Updated",
     ];
-
     const stageLabel = (id) => {
       const s = STAGES.find((st) => st.id === id);
       return s ? s.label : id;
     };
-
     const escCsv = (val) => {
       const str = String(val || "");
       if (str.includes(",") || str.includes('"') || str.includes("\n")) {
@@ -575,30 +582,16 @@ export default function App() {
       }
       return str;
     };
-
-    const rows = deals.map((d) => [
-      d.company,
-      d.sector,
-      d.location,
-      stageLabel(d.stage),
-      d.source,
-      d.rating,
-      d.revenue || "",
-      d.ebitda || "",
-      d.ebitda_margin || "",
-      d.asking_price || "",
-      d.multiple || "",
-      d.contact_name,
-      d.contact_email,
-      d.contact_phone,
-      d.broker,
-      d.next_step,
-      d.next_step_date || "",
-      d.notes,
-      d.created_at ? new Date(d.created_at).toLocaleDateString() : "",
-      d.updated_at ? new Date(d.updated_at).toLocaleDateString() : "",
-    ].map(escCsv));
-
+    const rows = deals.map((d) =>
+      [
+        d.company, d.sector, d.location, stageLabel(d.stage), d.source, d.rating,
+        d.revenue || "", d.ebitda || "", d.ebitda_margin || "", d.asking_price || "", d.multiple || "",
+        d.contact_name, d.contact_email, d.contact_phone, d.broker,
+        d.next_step, d.next_step_date || "", d.notes,
+        d.created_at ? new Date(d.created_at).toLocaleDateString() : "",
+        d.updated_at ? new Date(d.updated_at).toLocaleDateString() : "",
+      ].map(escCsv)
+    );
     const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
     const bom = "\uFEFF";
     const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
@@ -611,6 +604,8 @@ export default function App() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+
+  // ─── LOADING STATE ────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div style={{ ...root, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
@@ -622,12 +617,11 @@ export default function App() {
     );
   }
 
-  // ─── MAIN RENDER ────────────────────────────────────────
+  // ─── MAIN RENDER ──────────────────────────────────────────────────────────
   return (
     <div style={root}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       <ErrorBanner />
-
       <div style={headerStyle}>
         <div>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: -0.5, color: "#f1f5f9" }}>ETA Deal Pipeline</h1>
@@ -638,13 +632,13 @@ export default function App() {
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <div style={{ display: "flex", background: "#141829", borderRadius: 8, border: "1px solid #1e293b", overflow: "hidden" }}>
             {[
-              { id: "pipeline", label: "Pipeline" },
-              { id: "list", label: "List" },
-              { id: "dashboard", label: "Dashboard" },
-              { id: "screener", label: "Screener" },
+              { id: "pipeline",   label: "Pipeline" },
+              { id: "list",       label: "List" },
+              { id: "dashboard",  label: "Dashboard" },
+              { id: "screener",   label: "Screener" },
               { id: "activities", label: "Activities" },
-              { id: "scorecard", label: "Scorecard" },
-              { id: "contacts", label: "Contacts" },
+              { id: "scorecard",  label: "Scorecard" },
+              { id: "contacts",   label: "Contacts" },
             ].map((v) => (
               <button
                 key={v.id}
@@ -665,17 +659,16 @@ export default function App() {
         </div>
       </div>
 
-      <div
-        style={{
-          display: "flex", gap: 0, padding: "0 24px", background: "#0f1322",
-          borderBottom: "1px solid #111827", flexWrap: "wrap",
-        }}
-      >
+      {/* Stage count bar */}
+      <div style={{ display: "flex", gap: 0, padding: "0 24px", background: "#0f1322", borderBottom: "1px solid #111827", flexWrap: "wrap" }}>
         {STAGES.filter((s) => s.id !== "passed").map((stage) => (
           <div
             key={stage.id}
             style={{
-              padding: "10px 16px", display: "flex", alignItems: "center", gap: 6,
+              padding: "10px 16px",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
               borderBottom: `2px solid ${stageCount(stage.id) > 0 ? stage.color : "transparent"}`,
               transition: "border-color 0.2s",
             }}
@@ -686,14 +679,15 @@ export default function App() {
         ))}
       </div>
 
-      {view === "pipeline" && <PipelineView />}
-      {view === "list" && <ListView />}
-      {view === "detail" && <DetailView />}
-      {view === "dashboard" && <Dashboard deals={deals} />}
-      {view === "screener" && <DealScreener />}
+      {view === "pipeline"   && <PipelineView />}
+      {view === "list"       && <ListView />}
+      {view === "detail"     && <DetailView />}
+      {view === "dashboard"  && <Dashboard deals={deals} />}
+      {view === "screener"   && <DealScreener />}
       {view === "activities" && <ActivityLog deals={deals} />}
-      {view === "scorecard" && <Scorecard deals={deals} />}
-      {view === "contacts" && <Contacts deals={deals} />}
+      {view === "scorecard"  && <Scorecard deals={deals} />}
+      {view === "contacts"   && <Contacts deals={deals} />}
+
       {renderFormModal()}
 
       {deals.length === 0 && view !== "detail" && (

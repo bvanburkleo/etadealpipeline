@@ -37,14 +37,16 @@ const btn = (bg = "#6366f1", small = false) => ({
   letterSpacing: 0.3,
 });
 
+// CHANGE 2: Added "NDA Signed" after "Identified", renamed "Initial Review" to "CIM Received"
 const STAGES = [
-  { id: "identified", label: "Identified" },
-  { id: "initial_review", label: "Initial Review" },
-  { id: "outreach", label: "Outreach" },
-  { id: "diligence", label: "Due Diligence" },
-  { id: "loi", label: "LOI / Negotiation" },
-  { id: "closed", label: "Closed" },
-  { id: "passed", label: "Passed" },
+  { id: "identified",     label: "Identified" },
+  { id: "nda_signed",     label: "NDA Signed" },
+  { id: "cim_received",   label: "CIM Received" },
+  { id: "outreach",       label: "Outreach" },
+  { id: "diligence",      label: "Due Diligence" },
+  { id: "loi",            label: "LOI / Negotiation" },
+  { id: "closed",         label: "Closed" },
+  { id: "passed",         label: "Passed" },
 ];
 
 const SECTORS = [
@@ -62,10 +64,14 @@ const SECTORS = [
   "Other",
 ];
 
+// CHANGE 1: Added BizEx, Vested Business Brokers, Axial
 const SOURCES = [
   "Broker",
   "Direct Outreach",
   "BizBuySell",
+  "BizEx",
+  "Vested Business Brokers",
+  "Axial",
   "Referral",
   "SearchFunder",
   "Other",
@@ -148,50 +154,78 @@ export default function DealForm({ initialData, isEdit, saving, onSave, onDelete
   return (
     <div
       style={{
-        position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000,
-        display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.7)",
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20,
       }}
       onClick={onClose}
     >
       <div
         style={{
-          background: "#0f1322", border: "1px solid #1e293b", borderRadius: 16,
-          padding: 28, width: "100%", maxWidth: 620, maxHeight: "90vh", overflowY: "auto",
+          background: "#0f1322",
+          border: "1px solid #1e293b",
+          borderRadius: 16,
+          padding: 28,
+          width: "100%",
+          maxWidth: 620,
+          maxHeight: "90vh",
+          overflowY: "auto",
         }}
         onClick={(e) => e.stopPropagation()}
       >
         <h3 style={{ margin: "0 0 20px", fontSize: 20, fontWeight: 800, color: "#e2e8f0" }}>
           {isEdit ? "Edit Deal" : "New Deal"}
         </h3>
+
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
           {Field("Company Name", "company", "text", true)}
           {Field("Location", "location", "text", true)}
           {Select("Sector", "sector", SECTORS, true)}
+
+          {/* CHANGE 1: Updated SOURCES array now includes BizEx, Vested Business Brokers, Axial */}
           {Select("Source", "source", SOURCES, true)}
+
+          {/* CHANGE 2: Updated STAGES array — NDA Signed added, CIM Received replaces Initial Review */}
           {Select("Stage", "stage", STAGES.map((s) => ({ value: s.id, label: s.label })), true)}
+
           <div style={{ gridColumn: "span 1" }}>
             <label style={labelStyle}>Rating</label>
             <Stars value={form.rating || 3} onChange={(v) => update("rating", v)} />
           </div>
+
           {Field("Revenue ($)", "revenue", "number", true)}
           {Field("EBITDA ($)", "ebitda", "number", true)}
           {Field("Asking Price ($)", "asking_price", "number", true)}
           <div />
+
           <div style={{ gridColumn: "span 2", borderTop: "1px solid #1e293b", margin: "4px 0" }} />
-          {Field("Contact Name", "contact_name", "text", true)}
-          {Field("Contact Email", "contact_email", "email", true)}
-          {Field("Contact Phone", "contact_phone", "tel", true)}
-          {Field("Broker", "broker", "text", true)}
+
+          {/* CHANGE 3: Renamed contact section fields */}
+          {Field("Broker Name", "contact_name", "text", true)}
+          {Field("Broker Email", "contact_email", "email", true)}
+          {Field("Broker Phone", "contact_phone", "tel", true)}
+          {Field("Firm", "broker", "text", true)}
+
           <div style={{ gridColumn: "span 2", borderTop: "1px solid #1e293b", margin: "4px 0" }} />
+
           {Field("Next Step", "next_step")}
           {Field("Next Step Date", "next_step_date", "date", true)}
           <div />
           {TextArea("Notes", "notes")}
         </div>
+
         <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
           <button style={btn("#334155", true)} onClick={onClose}>Cancel</button>
           {isEdit && (
-            <button style={btn("#dc2626", true)} onClick={() => { if (window.confirm("Delete this deal?")) onDelete(form.id); }}>
+            <button
+              style={btn("#dc2626", true)}
+              onClick={() => { if (window.confirm("Delete this deal?")) onDelete(form.id); }}
+            >
               Delete
             </button>
           )}
